@@ -9,8 +9,9 @@ namespace TGC.MonoGame.TP
     public class Player
     {
         public Matrix world = Matrix.Identity;
-        public Matrix world2 = Matrix.Identity;
-        private float rotation;
+        public Vector3 _position = Vector3.Zero;
+        private Vector3 _rotation = Vector3.Forward;
+        private float yaw;
         private Model model;
         private Effect effect;
         private Matrix[] _boneTransforms;
@@ -32,10 +33,46 @@ namespace TGC.MonoGame.TP
 
         public void Update(GameTime gameTime)
         {
-            rotation += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
+            if (Keyboard.GetState().IsKeyDown(Keys.W))
+            {
+                _position = _position + world.Forward;
+            }
+            if (Keyboard.GetState().IsKeyDown(Keys.A))
+            {
+                _position = _position + world.Left;
+            }
+            if (Keyboard.GetState().IsKeyDown(Keys.S))
+            {
+                _position = _position + world.Backward;
+            }
+            if (Keyboard.GetState().IsKeyDown(Keys.D))
+            {
+                _position = _position + world.Right;
+            }
+            if (Mouse.GetState().X > 910)
+            {
+                yaw -= 0.01f;
+                _rotation = Vector3.Transform(_rotation, Matrix.CreateRotationY(0.1f));
+            }
+            else if (Mouse.GetState().X < 910)
+            {
+                yaw += 0.01f;
+                _rotation = Vector3.Transform(_rotation, Matrix.CreateRotationY(-.1f));
+            }
 
-            world = Matrix.CreateScale(0.1f);
-            world2 = Matrix.CreateRotationX(rotation);
+            /*if (Mouse.GetState().Y > 490)
+            {
+                turret_pitch += elapsedTime * 0.1f;
+                turret_pitch = Math.Min(turret_pitch, 0.2f);
+            }
+            else if (Mouse.GetState().Y < 490)
+            {
+                turret_pitch -= elapsedTime * 0.1f;
+                turret_pitch = Math.Max(turret_pitch, -0.2f);
+            }*/
+            Mouse.SetPosition(910, 490);
+            world = Matrix.CreateScale(0.1f) * Matrix.CreateRotationY(yaw) * Matrix.CreateTranslation(_position);
+            
             
         }
 
@@ -44,7 +81,7 @@ namespace TGC.MonoGame.TP
             model.CopyAbsoluteBoneTransformsTo(_boneTransforms);
 
             //Aca hago todos los cambios de mis bones
-            _boneTransforms[1] = world2 * _boneTransforms[1];
+            //_boneTransforms[1] = world * _boneTransforms[1];
 
             effect.Parameters["View"].SetValue(view);
             effect.Parameters["Projection"].SetValue(projection);
