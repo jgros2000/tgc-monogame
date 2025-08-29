@@ -34,7 +34,7 @@ namespace TGC.MonoGame.TP
             // Carpeta raiz donde va a estar toda la Media.
             Content.RootDirectory = "Content";
             // Hace que el mouse sea visible.
-            IsMouseVisible = true;
+            IsMouseVisible = false;
         }
 
         private GraphicsDeviceManager Graphics { get; }
@@ -44,6 +44,9 @@ namespace TGC.MonoGame.TP
         private Matrix View { get; set; }
         private Matrix Projection { get; set; }
         private Player player;
+        private Hitbox hit;
+        private BoundingBox piso = new BoundingBox(new Vector3(-30, -1, -170), new Vector3(30, 1, 30));
+
 
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo.
@@ -62,12 +65,13 @@ namespace TGC.MonoGame.TP
             // Seria hasta aca.
 
             // Configuramos nuestras matrices de la escena.
-            View = Matrix.CreateLookAt(Vector3.UnitZ * 100 + Vector3.UnitY * 80, Vector3.UnitY*30, Vector3.Up);
+            View = Matrix.CreateLookAt(Vector3.UnitZ * 100 + Vector3.UnitY * 80, Vector3.UnitY * 30, Vector3.Up);
             Projection =
-                Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 1, 250);
+                Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 1, 500);
 
             base.Initialize();
         }
+        
 
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo, despues de Initialize.
@@ -88,7 +92,8 @@ namespace TGC.MonoGame.TP
 
             // Asigno el efecto que cargue a cada parte del mesh.
             // Un modelo puede tener mas de 1 mesh internamente.
-            player = new Player(Model,Effect);
+            player = new Player(Model, Effect);
+            hit = new Hitbox(GraphicsDevice, Matrix.CreateScale(30, 1, 100) * Matrix.CreateTranslation(0, 0, -70), Effect);
 
             base.LoadContent();
         }
@@ -110,8 +115,8 @@ namespace TGC.MonoGame.TP
             }
 
             // Basado en el tiempo que paso se va generando una rotacion.
-            player.Update(gameTime);
-
+            player.Update(gameTime,piso);
+            View = Matrix.CreateLookAt(player._position - player._rotation*200 + Vector3.UnitY * 80, player._position + Vector3.UnitY * 40, Vector3.Up);
             base.Update(gameTime);
         }
 
@@ -125,7 +130,8 @@ namespace TGC.MonoGame.TP
             GraphicsDevice.Clear(Color.Black);
 
             // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
-            player.Draw(GraphicsDevice,Projection, View);
+            player.Draw(GraphicsDevice, Projection, View);
+            hit.Draw(GraphicsDevice, View, Projection);
         }
 
         /// <summary>

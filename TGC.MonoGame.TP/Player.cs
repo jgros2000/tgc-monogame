@@ -10,16 +10,20 @@ namespace TGC.MonoGame.TP
     {
         public Matrix world = Matrix.Identity;
         public Vector3 _position = Vector3.Zero;
-        private Vector3 _rotation = Vector3.Forward;
+        public Vector3 _rotation = Vector3.Forward;
         private float yaw;
         private Model model;
         private Effect effect;
         private Matrix[] _boneTransforms;
+        private Ray piernaD;
+        private Ray piernaI;
 
         public Player(Model Model, Effect Effect)
         {
             model = Model;
             effect = Effect;
+            piernaD = new Ray(_position, Vector3.Down);
+            piernaI = new Ray(_position, Vector3.Down);
             foreach (var mesh in model.Meshes)
             {
                 // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
@@ -29,35 +33,41 @@ namespace TGC.MonoGame.TP
                 }
             }
             _boneTransforms = new Matrix[model.Bones.Count];
+            model.CopyAbsoluteBoneTransformsTo(_boneTransforms);
         }
 
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gameTime, BoundingBox piso)
         {
+            if (piernaI.Intersects(piso) == null && piernaD.Intersects(piso) == null)
+            {
+                _position -= Vector3.UnitY;
+            }
             if (Keyboard.GetState().IsKeyDown(Keys.W))
             {
-                _position = _position + world.Forward;
+                _position = _position + world.Forward * 5;
+                //Walk();
             }
             if (Keyboard.GetState().IsKeyDown(Keys.A))
             {
-                _position = _position + world.Left;
+                _position = _position + world.Left * 5;
             }
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
-                _position = _position + world.Backward;
+                _position = _position + world.Backward * 5;
             }
             if (Keyboard.GetState().IsKeyDown(Keys.D))
             {
-                _position = _position + world.Right;
+                _position = _position + world.Right * 5;
             }
             if (Mouse.GetState().X > 910)
             {
                 yaw -= 0.01f;
-                _rotation = Vector3.Transform(_rotation, Matrix.CreateRotationY(0.1f));
+                _rotation = Vector3.Transform(_rotation, Matrix.CreateRotationY(-0.01f));
             }
             else if (Mouse.GetState().X < 910)
             {
                 yaw += 0.01f;
-                _rotation = Vector3.Transform(_rotation, Matrix.CreateRotationY(-.1f));
+                _rotation = Vector3.Transform(_rotation, Matrix.CreateRotationY(0.01f));
             }
 
             /*if (Mouse.GetState().Y > 490)
@@ -72,13 +82,21 @@ namespace TGC.MonoGame.TP
             }*/
             Mouse.SetPosition(910, 490);
             world = Matrix.CreateScale(0.1f) * Matrix.CreateRotationY(yaw) * Matrix.CreateTranslation(_position);
+
+            piernaD.Position = (_boneTransforms[10] * world).Translation;
+            piernaI.Position = (_boneTransforms[11] * world).Translation;
             
             
         }
 
+        private void Walk()
+        {
+            _boneTransforms[10] = Matrix.CreateRotationX(0.02f) * _boneTransforms[10];
+        }
+
         public void Draw(GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
         {
-            model.CopyAbsoluteBoneTransformsTo(_boneTransforms);
+            
 
             //Aca hago todos los cambios de mis bones
             //_boneTransforms[1] = world * _boneTransforms[1];
@@ -89,8 +107,11 @@ namespace TGC.MonoGame.TP
 
             foreach (var mesh in model.Meshes)
             {
-                
-                foreach (var meshPart in mesh.MeshParts) {
+
+                foreach (var meshPart in mesh.MeshParts)
+                {
+                    Console.WriteLine(mesh.Name);
+                    Console.WriteLine(mesh.ParentBone.Index);
                     effect.Parameters["World"].SetValue(_boneTransforms[mesh.ParentBone.Index] * world);
                     graphicsDevice.SetVertexBuffer(meshPart.VertexBuffer);
                     graphicsDevice.Indices = meshPart.IndexBuffer;
