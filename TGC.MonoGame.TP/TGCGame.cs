@@ -38,8 +38,6 @@ namespace TGC.MonoGame.TP
         }
 
         private GraphicsDeviceManager Graphics { get; }
-        private SpriteBatch SpriteBatch { get; set; }
-        private Model Model { get; set; }
         private Effect Effect { get; set; }
         private Matrix View { get; set; }
         private Matrix Projection { get; set; }
@@ -81,18 +79,18 @@ namespace TGC.MonoGame.TP
         protected override void LoadContent()
         {
             // Aca es donde deberiamos cargar todos los contenido necesarios antes de iniciar el juego.
-            SpriteBatch = new SpriteBatch(GraphicsDevice);
+
 
             // Cargo el modelo del logo.
-            Model = Content.Load<Model>(ContentFolder3D + "Body");
+            //Model = Content.Load<Model>(ContentFolder3D + "Body");
 
             // Cargo un efecto basico propio declarado en el Content pipeline.
             // En el juego no pueden usar BasicEffect de MG, deben usar siempre efectos propios.
-            Effect = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
+            Effect = Content.Load<Effect>(ContentFolderEffects + "BoneShader");
 
             // Asigno el efecto que cargue a cada parte del mesh.
             // Un modelo puede tener mas de 1 mesh internamente.
-            player = new Player(Model, Effect);
+            player = new Player(GraphicsDevice, Effect);
             hit = new Hitbox(GraphicsDevice, Matrix.CreateScale(30, 1, 100) * Matrix.CreateTranslation(0, 0, -70), Effect);
 
             base.LoadContent();
@@ -116,7 +114,7 @@ namespace TGC.MonoGame.TP
 
             // Basado en el tiempo que paso se va generando una rotacion.
             player.Update(gameTime,piso);
-            View = Matrix.CreateLookAt(player._position - player._rotation*200 + Vector3.UnitY * 80, player._position + Vector3.UnitY * 40, Vector3.Up);
+            View = Matrix.CreateLookAt(player._position + Vector3.UnitZ * 180 + Vector3.UnitY * 80, player._position + Vector3.UnitY * 40, Vector3.Up);
             base.Update(gameTime);
         }
 
@@ -130,7 +128,7 @@ namespace TGC.MonoGame.TP
             GraphicsDevice.Clear(Color.Black);
 
             // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
-            player.Draw(GraphicsDevice, Projection, View);
+            player.Draw(gameTime,GraphicsDevice, Projection, View);
             hit.Draw(GraphicsDevice, View, Projection);
         }
 

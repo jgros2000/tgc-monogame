@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
+using BepuPhysics;
+using BepuPhysics.Collidables;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics.PackedVector;
 using Microsoft.Xna.Framework.Input;
 
 namespace TGC.MonoGame.TP
@@ -9,55 +13,44 @@ namespace TGC.MonoGame.TP
     public class Player
     {
         public Matrix world = Matrix.Identity;
+        public Matrix world2 = Matrix.Identity;
+        public Matrix world3 = Matrix.Identity;
         public Vector3 _position = Vector3.Zero;
         public Vector3 _rotation = Vector3.Forward;
         private float yaw;
-        private Model model;
+        private float turret_pitch = 0;
         private Effect effect;
-        private Matrix[] _boneTransforms;
-        private Ray piernaD;
-        private Ray piernaI;
 
-        public Player(Model Model, Effect Effect)
+        public float t = 0.0f;
+        Matrix[] boneMatrices = new Matrix[4];
+
+        private CustomModel cust;
+
+        public Player(GraphicsDevice graphicsDevice, Effect Effect)
         {
-            model = Model;
             effect = Effect;
-            piernaD = new Ray(_position, Vector3.Down);
-            piernaI = new Ray(_position, Vector3.Down);
-            foreach (var mesh in model.Meshes)
-            {
-                // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
-                foreach (var meshPart in mesh.MeshParts)
-                {
-                    meshPart.Effect = effect;
-                }
-            }
-            _boneTransforms = new Matrix[model.Bones.Count];
-            model.CopyAbsoluteBoneTransformsTo(_boneTransforms);
+
+            cust = new CustomModel(graphicsDevice);
         }
 
         public void Update(GameTime gameTime, BoundingBox piso)
         {
-            if (piernaI.Intersects(piso) == null && piernaD.Intersects(piso) == null)
-            {
-                _position -= Vector3.UnitY;
-            }
+
             if (Keyboard.GetState().IsKeyDown(Keys.W))
             {
-                _position = _position + world.Forward * 5;
-                //Walk();
+                _position = _position + world.Forward;
             }
             if (Keyboard.GetState().IsKeyDown(Keys.A))
             {
-                _position = _position + world.Left * 5;
+                _position = _position + world.Left;
             }
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
-                _position = _position + world.Backward * 5;
+                _position = _position + world.Backward;
             }
             if (Keyboard.GetState().IsKeyDown(Keys.D))
             {
-                _position = _position + world.Right * 5;
+                _position = _position + world.Right;
             }
             if (Mouse.GetState().X > 910)
             {
@@ -70,63 +63,39 @@ namespace TGC.MonoGame.TP
                 _rotation = Vector3.Transform(_rotation, Matrix.CreateRotationY(0.01f));
             }
 
-            /*if (Mouse.GetState().Y > 490)
+            if(Mouse.GetState().Y > 490)
             {
-                turret_pitch += elapsedTime * 0.1f;
-                turret_pitch = Math.Min(turret_pitch, 0.2f);
+                turret_pitch += 0.1f;
+                turret_pitch = Math.Min(turret_pitch, 3f);
             }
             else if (Mouse.GetState().Y < 490)
             {
-                turret_pitch -= elapsedTime * 0.1f;
-                turret_pitch = Math.Max(turret_pitch, -0.2f);
-            }*/
+                turret_pitch -= 0.1f;
+                turret_pitch = Math.Max(turret_pitch, 1f);
+            }
             Mouse.SetPosition(910, 490);
-            world = Matrix.CreateScale(0.1f) * Matrix.CreateRotationY(yaw) * Matrix.CreateTranslation(_position);
+            world = Matrix.CreateScale(10f) * Matrix.CreateRotationY(yaw) * Matrix.CreateTranslation(_position);
+            world2 = Matrix.CreateScale(turret_pitch);
 
-            piernaD.Position = (_boneTransforms[10] * world).Translation;
-            piernaI.Position = (_boneTransforms[11] * world).Translation;
-            
-            
+
+
         }
 
-        private void Walk()
+
+        public void Draw(GameTime gameTime, GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
         {
-            _boneTransforms[10] = Matrix.CreateRotationX(0.02f) * _boneTransforms[10];
-        }
-
-        public void Draw(GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
-        {
-            
-
-            //Aca hago todos los cambios de mis bones
-            //_boneTransforms[1] = world * _boneTransforms[1];
-
+            for (int i = 0; i < 4; i++)
+            {
+                boneMatrices[i] = Matrix.Identity;
+            }
+            boneMatrices[2] = world2;
+            effect.Parameters["Bones"].SetValue(boneMatrices);
             effect.Parameters["View"].SetValue(view);
             effect.Parameters["Projection"].SetValue(projection);
-            effect.Parameters["DiffuseColor"].SetValue(Color.DarkBlue.ToVector3());
+            effect.Parameters["DiffuseColor"].SetValue(Color.Red.ToVector3());
+            effect.Parameters["World"].SetValue(world);
+            cust.Draw(graphicsDevice,effect);
 
-            foreach (var mesh in model.Meshes)
-            {
-
-                foreach (var meshPart in mesh.MeshParts)
-                {
-                    Console.WriteLine(mesh.Name);
-                    Console.WriteLine(mesh.ParentBone.Index);
-                    effect.Parameters["World"].SetValue(_boneTransforms[mesh.ParentBone.Index] * world);
-                    graphicsDevice.SetVertexBuffer(meshPart.VertexBuffer);
-                    graphicsDevice.Indices = meshPart.IndexBuffer;
-                    foreach (var pass in effect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        graphicsDevice.DrawIndexedPrimitives(
-                            PrimitiveType.TriangleList,
-                            meshPart.VertexOffset,
-                            meshPart.StartIndex,
-                            meshPart.PrimitiveCount
-                        );
-                    }
-                }
-            }
         }
 
     }
