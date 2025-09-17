@@ -1,6 +1,10 @@
 using System;
 using System.Data;
+using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using BepuPhysics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
@@ -16,12 +20,15 @@ namespace TGC.MonoGame.TP
 
         public CustomPart(GraphicsDevice graphicsDevice, VertexSkinned[] vertex, ushort[] index, int triangles)
         {
+
             _vertices = new VertexBuffer(graphicsDevice, VertexSkinned.VertexDeclaration, vertex.Length, BufferUsage.WriteOnly);
             _vertices.SetData(vertex);
             _indices = new IndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, index.Length, BufferUsage.None);
             _indices.SetData(index);
             _triangles = triangles;
         }
+
+
 
 
         public void Draw(GraphicsDevice graphicsDevice, Effect effect)

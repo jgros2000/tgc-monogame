@@ -14,7 +14,7 @@
 // HLSL Semantics - https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics
 
 // Maximum number of bones
-#define MAX_BONES 4
+#define MAX_BONES 11
 
 // Bone matrices passed from C#
 float4x4 Bones[MAX_BONES];
@@ -46,23 +46,24 @@ VertexOutput MainVS(VertexInput input)
     VertexOutput output;
 
     float4 skinnedPosition = float4(0, 0, 0, 0);
-
+    float4 weights = input.BoneWeights;
     // Skin the vertex using 4 bone matrices
     [unroll]
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 2; i++)
     {
         uint boneIndex = input.BoneIndices[i];
-        float weight = input.BoneWeights[i];
+        float weight = weights[i];
 
         float4x4 boneMatrix = Bones[boneIndex];
 
+        
+
         skinnedPosition += mul(float4(input.Position, 1.0), boneMatrix) * weight;
     }
-
     float4 worldPos = mul(skinnedPosition, World);
     float4 viewPos = mul(worldPos, View);
     output.Position = mul(viewPos, Projection);
-    output.Pos = float3(input.Position.x,input.Position.y,input.Position.z)+1.0;
+    output.Pos = float3(1,1,1);
 
     return output;
 }

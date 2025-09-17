@@ -22,7 +22,8 @@ namespace TGC.MonoGame.TP
         private Effect effect;
 
         public float t = 0.0f;
-        Matrix[] boneMatrices = new Matrix[4];
+        private Matrix[] boneMatrices = new Matrix[11];
+        
 
         private CustomModel cust;
 
@@ -30,7 +31,7 @@ namespace TGC.MonoGame.TP
         {
             effect = Effect;
 
-            cust = new CustomModel(graphicsDevice);
+            cust = new CustomModel(graphicsDevice, @"C:\Users\PC\Documents\TGC\mesh_data.bin");
         }
 
         public void Update(GameTime gameTime, BoundingBox piso)
@@ -38,7 +39,8 @@ namespace TGC.MonoGame.TP
 
             if (Keyboard.GetState().IsKeyDown(Keys.W))
             {
-                _position = _position + world.Forward;
+                //_position = _position + world.Forward;
+                cust.boneMatrices[0] = cust.boneMatrices[0] * Matrix.CreateTranslation(0,.01f*turret_pitch,0);
             }
             if (Keyboard.GetState().IsKeyDown(Keys.A))
             {
@@ -46,11 +48,12 @@ namespace TGC.MonoGame.TP
             }
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
-                _position = _position + world.Backward;
+                //_position = _position + world.Backward;
+                 cust.boneMatrices[1] = cust.boneMatrices[1] * Matrix.CreateRotationY(.1f * turret_pitch);
             }
             if (Keyboard.GetState().IsKeyDown(Keys.D))
             {
-                _position = _position + world.Right;
+                cust.boneMatrices[3] = cust.boneMatrices[3] * Matrix.CreateRotationY(.01f*turret_pitch);
             }
             if (Mouse.GetState().X > 910)
             {
@@ -66,16 +69,16 @@ namespace TGC.MonoGame.TP
             if(Mouse.GetState().Y > 490)
             {
                 turret_pitch += 0.1f;
-                turret_pitch = Math.Min(turret_pitch, 3f);
+                turret_pitch = Math.Min(turret_pitch, 1);
             }
             else if (Mouse.GetState().Y < 490)
             {
                 turret_pitch -= 0.1f;
-                turret_pitch = Math.Max(turret_pitch, 1f);
+                turret_pitch = Math.Max(turret_pitch, -1f);
             }
             Mouse.SetPosition(910, 490);
             world = Matrix.CreateScale(10f) * Matrix.CreateRotationY(yaw) * Matrix.CreateTranslation(_position);
-            world2 = Matrix.CreateScale(turret_pitch);
+            //boneMatrices[2] = 
 
 
 
@@ -84,11 +87,12 @@ namespace TGC.MonoGame.TP
 
         public void Draw(GameTime gameTime, GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 11; i++)
             {
-                boneMatrices[i] = Matrix.Identity;
+                boneMatrices[i] = cust.inverseMatrices[i] * cust.boneMatrices[i];
             }
-            boneMatrices[2] = world2;
+            boneMatrices[4] = cust.inverseMatrices[4] * cust.boneMatrices[4]*boneMatrices[3];
+            
             effect.Parameters["Bones"].SetValue(boneMatrices);
             effect.Parameters["View"].SetValue(view);
             effect.Parameters["Projection"].SetValue(projection);
